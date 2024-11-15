@@ -26,12 +26,14 @@ const Chat = () => {
   const [message, setMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [senderId, setSenderId] = useState<number | null>(null);
+  const [senderName, setSenderName] = useState<number | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [writingText, setWritingText] = useState("");
 
   useEffect(() => {
     setSenderId(JSON.parse(sessionStorage.getItem("user") || "")?.id);
+    setSenderName(JSON.parse(sessionStorage.getItem("user") || "")?.username);
   }, []);
 
   useEffect(() => {
@@ -69,10 +71,11 @@ const Chat = () => {
         handleUserClick(selectedUser);
         stompClient.subscribe(`/topic/private/${senderId}`, (msg) => {
           const msgData = JSON.parse(msg.body);
+
           setMessages((prevMessages) => ({
             ...prevMessages,
-            [selectedUser]: [
-              ...(prevMessages[selectedUser] || []),
+            [msgData.senderId]: [
+              ...(prevMessages[msgData.senderId] || []),
               `${msgData.senderName}: ${msgData.message}`,
             ],
           }));
@@ -94,6 +97,16 @@ const Chat = () => {
         senderId: senderId ? Number(senderId) : null,
         receiverId: selectedUser ? selectedUser : null,
       });
+
+      if (selectedUser) {
+        setMessages((prevMessages) => ({
+          ...prevMessages,
+          [selectedUser]: [
+            ...(prevMessages[selectedUser] || []),
+            `${senderName}: ${message}`,
+          ],
+        }));
+      }
 
       client.send("/app/send", {}, messageData);
 
