@@ -42,12 +42,4 @@ public class UserController {
         }
     }
 
-    @GetMapping("/{senderId}")
-    public Object getAllUsers(@PathVariable Long senderId) {
-        try {
-            return userService.getAllUsers(senderId);
-        } catch (Exception e) {
-            return false;
-        }
-    }
 }

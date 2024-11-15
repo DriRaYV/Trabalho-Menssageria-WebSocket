@@ -21,6 +21,7 @@ public class UserService {
     public Long registerUser(String username) {
 
         User existingUser = userRepository.findByUsername(username);
+
         if (existingUser != null) {
             throw new DataIntegrityViolationException("O Usuário '" + username + "' já existe.");
         }
@@ -42,8 +43,8 @@ public class UserService {
         return userRepository.findById(userId);
     }
 
-    public List<User> getAllUsers(Long senderId) {
-        return userRepository.getAllUsers(senderId);
+    public List<User> getAllUsers() {
+        return userRepository.getAllUsers();
     }
 
 

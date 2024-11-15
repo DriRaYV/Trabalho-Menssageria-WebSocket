@@ -79,11 +79,11 @@ public class ChatController {
     }
 
     @KafkaListener(topics = "users", groupId = "chatws")
-    public void listenUsers(String senderId) {
+    public void listenUsers() {
         try {
-            List<User> users = userService.getAllUsers(Long.valueOf(senderId));
+            List<User> users = userService.getAllUsers();
             String usersJson = objectMapper.writeValueAsString(users);
-            template.convertAndSend("/topic/users/"+ senderId, usersJson);
+            template.convertAndSend("/topic/users", usersJson);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -116,11 +116,11 @@ public class ChatController {
     }
 
     @MessageMapping("/activeusers")
-    public void getUsers(@Payload String senderId) {
+    public void getUsers() {
         try {
-            kafkaTemplate.send("users", senderId);
+            kafkaTemplate.send("users", null);
         } catch (NumberFormatException e) {
-            System.err.println("Formato inválido para senderId: " + senderId);
+            System.err.println("Formato inválido para senderId:");
         }
     }
 

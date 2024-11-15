@@ -50,11 +50,11 @@ public class UserRepository {
         }
     }
 
-    public List<User> getAllUsers(Long senderId) {
+    public List<User> getAllUsers() {
         try {
             TypedQuery<User> query = entityManager.createQuery(
-                    "SELECT u FROM users u WHERE u.id <> :senderId", User.class
-            ).setParameter("senderId", senderId);
+                    "SELECT u FROM users u", User.class
+            );
 
             return query.getResultList();
         } catch (NoResultException e) {
