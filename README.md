@@ -188,9 +188,14 @@ public class UserController {
 `ChatController`:
 
 ```java
+
 @Controller
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
 public class ChatController {
+
+    @Autowired
+    private SimpMessagingTemplate template;
+
 
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
@@ -204,28 +209,109 @@ public class ChatController {
         this.userService = userService;
     }
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @KafkaListener(topics = "chat", groupId = "chatws")
     public void listenChatMessages(String message) {
-        // Processamento da mensagem recebida no Kafka
+        try {
+            MessageDTO messageDTO = objectMapper.readValue(message, MessageDTO.class);
+
+            String messageContent = messageDTO.getMessage();
+            Long senderId = messageDTO.getSenderId();
+            Long receiverId = messageDTO.getReceiverId();
+
+
+            if (senderId != null) {
+                User user = userService.getUserById(senderId);
+                if (user != null) {
+                    messageDTO.setSenderName(user.getUsername());
+                }
+            }
+
+            if (senderId != null && receiverId != null) {
+                chatService.saveMessageToDatabase(messageContent, senderId, receiverId);
+
+                template.convertAndSend("/topic/private/" + receiverId, messageDTO);
+                template.convertAndSend("/topic/private/" + senderId, messageDTO);
+            } else {
+                chatService.saveMessageToDatabase(messageContent, senderId);
+                template.convertAndSend("/topic/messages", messageDTO);
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @KafkaListener(topics = "users", groupId = "chatws")
+    public void listenUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+            String usersJson = objectMapper.writeValueAsString(users);
+            template.convertAndSend("/topic/users", usersJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @KafkaListener(topics = "writing", groupId = "chatws")
+    public void listenWriting(String userId) {
+        try {
+            User user = userService.getUserById(Long.valueOf(userId));
+            if (user != null) {
+                template.convertAndSend("/topic/writing", user.getUsername() + " está digitando...");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @MessageMapping("/send")
     public void sendMessage(String message) throws Exception {
-        kafkaTemplate.send("chat", message);
+        MessageDTO messageDTO = objectMapper.readValue(message, MessageDTO.class);
+
+        String messageJson = objectMapper.writeValueAsString(messageDTO);
+        kafkaTemplate.send("chat", messageJson);
     }
 
-    @GetMapping("/private/{receiverId}/{senderId}")
-    public ResponseEntity<Object> getPrivateMessages(@PathVariable Long receiverId, @PathVariable Long senderId) {
-        List<Message> privateMessages = chatService.getPrivateMessages(receiverId, senderId);
-        return ResponseEntity.ok(privateMessages);
+    @MessageMapping("/writingUser")
+    public void userWriting(@Payload String userId) throws Exception {
+        kafkaTemplate.send("writing", userId);
+    }
+
+    @MessageMapping("/activeusers")
+    public void getUsers() {
+        try {
+            kafkaTemplate.send("users", null);
+        } catch (NumberFormatException e) {
+            System.err.println("Formato inválido para senderId:");
+        }
+    }
+
+
+    @GetMapping("/private/{recieverId}/{senderId}")
+    public ResponseEntity<Object> getPrivateMessages(@PathVariable Long recieverId, @PathVariable Long senderId) {
+        try {
+            List<Message> privateMessages = chatService.getPrivateMessages(recieverId, senderId);
+            return ResponseEntity.ok(privateMessages);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
     }
 
     @GetMapping("/public")
     public ResponseEntity<Object> getAllPublicMessages() {
-        List<Message> messages = chatService.getPublicMessages();
-        return ResponseEntity.ok(messages);
+        try {
+            List<Message> messages = chatService.getPublicMessages();
+            return ResponseEntity.ok(messages);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
     }
 }
+
 ```
 
 ### Integração com **Kafka**:
