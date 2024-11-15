@@ -58,9 +58,9 @@ const Chat = () => {
         setTimeout(() => setWritingText(""), 3000);
       });
 
-      stompClient.send("/app/activeusers", {}, JSON.stringify(senderId));
+      stompClient.send("/app/activeusers", {});
 
-      stompClient.subscribe(`/topic/users/${senderId}`, (msg) => {
+      stompClient.subscribe(`/topic/users`, (msg) => {
         const usersData = JSON.parse(msg.body);
         setUsers(usersData.filter((user: User) => user.id !== senderId));
       });
@@ -148,17 +148,12 @@ const Chat = () => {
     setLoading(false);
   };
 
-  useEffect(() => console.log(messages), [messages]);
   const handleBackToGeneralChat = () => {
     setSelectedUser(null);
     setMessages({});
     setPublicMessages([]);
     handlePublicMessages();
   };
-
-  useEffect(() => {
-    if (selectedUser) console.log(messages[selectedUser]);
-  }, [selectedUser, messages]);
 
   return loading ? (
     <S.Container>
