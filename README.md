@@ -2,6 +2,13 @@
 
 Este guia ajudará você a configurar e executar o chat em tempo real utilizando Kafka, Spring Boot, e React.
 
+
+**Feito por:**
+- Arthur Barcala
+- Helena Barbosa Costa
+- Mirella Ayumi Miyakawa
+- Rafaella Guimarães Venturini
+
 ## Requisitos
 
 - **Docker** e **Docker Compose** instalados. Se você não tiver o Docker instalado, pode seguir o [guia oficial de instalação do Docker](https://docs.docker.com/get-docker/).
@@ -226,6 +233,14 @@ public class ChatController {
 - Kafka é utilizado para enviar e escutar mensagens em tempo real.
 - As mensagens de chat são enviadas para o tópico **chat** e consumidas pelos listeners.
 - As mensagens são também enviadas aos usuários conectados via WebSockets.
+
+### Tópicos Kafka
+
+1. O tópico Kafka: `chat` é referente ao tópico de chats, privado e público.
+2. O tópico Kafka: `users` é referente a lista de usuários.
+3. O tópico Kafka: `writing` é referente aos usuários escrevendo.
+
+
 
 A comunicação com Kafka é feita via `KafkaTemplate` e `KafkaListener`, permitindo que as mensagens sejam distribuídas de forma eficiente.
 
