@@ -1,0 +1,15 @@
+package com.wallet.backendchat.modules.user.dto;
+
+public class UserDTO {
+
+    private String username;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+}
